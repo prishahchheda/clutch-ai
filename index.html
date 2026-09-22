@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ClutchAI — Financial Twin for Student Life</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ============ TOP BAR ============ -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">C</div>
+      <div class="brand-text">
+        <h1>ClutchAI</h1>
+        <p>The zero-judgment, social-aware financial co-pilot for unpredictable student lives.</p>
+      </div>
+    </div>
+    <div class="topbar-status">
+      <button class="pill" id="apiStatusPill" title="Click to see or change the connected AI backend">
+        <span class="dot"></span><span id="apiStatusText">Demo mode · simulated AI</span>
+      </button>
+      <button class="pill" id="dataStatusPill" title="All data stays in this browser">
+        <span class="dot"></span>Saved locally
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ FINANCIAL TWIN OVERVIEW ============ -->
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Financial Twin</p>
+      <h2>Your money's current state.</h2>
+      <p class="section-sub">Not just a balance — your available funds, what's already spoken for, and how long it needs to last.</p>
+    </div>
+    <button class="secondary" id="openSettingsBtn">Edit income &amp; commitments</button>
+  </div>
+
+  <div class="grid cols-3" id="overviewCards">
+    <!-- filled by JS -->
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <div class="stat-label">Dynamic Safe-to-Spend Runway</div>
+    <div class="runway" id="runwayBar">
+      <div class="runway-fill" id="runwayFill"></div>
+    </div>
+    <div class="runway-labels">
+      <span>Today</span>
+      <span id="runwayDaysLabel">— days to next inflow</span>
+    </div>
+  </div>
+
+  <!-- ============ CAN I GO? SIMULATOR ============ -->
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Feature 01</p>
+      <h2>Can I go?</h2>
+      <p class="section-sub">Describe a spending decision in plain language. ClutchAI works out the real trade-off — not a yes or no.</p>
+    </div>
+  </div>
+
+  <div class="sim-hero">
+    <h2>If I do this, what happens next?</h2>
+    <p class="section-sub">Type it the way you'd text a friend. e.g. "My friends are going to a festival next month, ticket is ₹15,000 and my share of the Airbnb is ₹8,000. Can I go?" Powered by real Gemini AI by default — if it's ever unreachable, this falls back to a simulated estimate computed entirely in your browser.</p>
+    <div class="sim-input-row">
+      <textarea id="simInput" placeholder="Ask ClutchAI about a purchase, trip, or plan..."></textarea>
+      <button class="coral" id="simAskBtn">Ask ClutchAI</button>
+    </div>
+    <div class="sim-examples">
+      <button class="chip" data-ex="Concert tickets are ₹7,500 and dinner after will be about ₹1,500. Can I do both this weekend?">Concert + dinner</button>
+      <button class="chip" data-ex="I want to buy a new pair of headphones for ₹4,000 this week. Is that a bad idea right now?">New headphones</button>
+      <button class="chip" data-ex="Weekend trip with friends — my share is ₹6,000, happening in 10 days.">Weekend trip</button>
+    </div>
+
+    <div class="sim-result" id="simResult" style="display:none;"></div>
+  </div>
+
+  <!-- ============ ACADEMIC PACE + MICRO-SURPLUS ============ -->
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Feature 02 &amp; 03</p>
+      <h2>Academic pace &amp; the savings vault.</h2>
+      <p class="section-sub">A realistic buffer before high-pressure weeks, and small surpluses saved only when it's safe to.</p>
+    </div>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <div class="stat-label">Academic pace predictor</div>
+      <div id="examAlerts"></div>
+      <div id="examList" style="margin-top:6px;"></div>
+      <div class="field-row" style="margin-top:14px;">
+        <div class="field"><label>High-pressure period</label><input type="text" id="examName" placeholder="e.g. Finals week" /></div>
+        <div class="field"><label>Start date</label><input type="date" id="examDate" /></div>
+      </div>
+      <button class="secondary small" id="addExamBtn">+ Add period</button>
+    </div>
+
+    <div class="card">
+      <div class="stat-label">Micro-surplus savings vault</div>
+      <p class="stat-value" id="vaultBalance">₹0</p>
+      <p class="stat-note">Moved here automatically only on days your runway is comfortably healthy — never at the cost of essentials.</p>
+      <div id="vaultBanner"></div>
+    </div>
+  </div>
+
+  <!-- ============ SPLITWISE ============ -->
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Feature 04</p>
+      <h2>Splitwise, connected.</h2>
+      <p class="section-sub">Pull in what you actually owe your friends, automatically, instead of typing it in by hand.</p>
+    </div>
+  </div>
+  <div class="card" id="splitwiseCard"><!-- filled by JS --></div>
+
+  <!-- ============ TRANSACTIONS ============ -->
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Activity</p>
+      <h2>Transactions</h2>
+    </div>
+    <span class="pill" id="txCountPill">0 transactions</span>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <div class="field"><label>Description</label><input type="text" id="txDesc" placeholder="e.g. Swiggy dinner" /></div>
+      <div class="field-row">
+        <div class="field"><label>Amount (₹)</label><input type="number" id="txAmount" placeholder="0" /></div>
+        <div class="field"><label>Category</label>
+          <select id="txCategory">
+            <option>Food & Dining</option>
+            <option>Transport</option>
+            <option>Shopping</option>
+            <option>Subscriptions</option>
+            <option>Fun & Social</option>
+            <option>Bills</option>
+            <option>Education</option>
+            <option>Health</option>
+            <option>Investing & Trading</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Date</label><input type="date" id="txDate" /></div>
+      <div style="display:flex; gap:10px;">
+        <button class="cobalt" id="addTxBtn">+ Add transaction</button>
+        <button class="secondary" id="csvBtn">↑ Upload CSV</button>
+        <input type="file" id="csvInput" accept=".csv" style="display:none;" />
+      </div>
+      <p class="stat-note">CSV format: description, amount, category, date</p>
+    </div>
+
+    <div class="card" id="txListCard">
+      <div id="txList"></div>
+    </div>
+  </div>
+
+  <!-- ============ SPENDING ANALYSIS ============ -->
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Analysis</p>
+      <h2>Where your money is going.</h2>
+    </div>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <div class="stat-label">This month, by category</div>
+      <div class="donut-wrap" id="donutWrap"></div>
+    </div>
+    <div class="card">
+      <div class="stat-label">Last 6 months</div>
+      <div class="trend" id="trendChart"></div>
+    </div>
+  </div>
+
+  <!-- ============ BUDGETS ============ -->
+  <div class="section-head">
+    <div>
+      <p class="eyebrow">Control</p>
+      <h2>Category budgets.</h2>
+    </div>
+  </div>
+  <div class="card" id="budgetCard"></div>
+
+  <div class="footer-note">
+    ClutchAI is decision support, not financial advice. It never moves money or makes irreversible changes without you clicking the button yourself. All data lives only in this browser (localStorage). "Can I go?" is connected to a real Gemini-powered backend by default — your questions go from your browser to that backend, which calls Google's Gemini API using a key that lives only on the server, never in this app or in GitHub. If the backend is ever unreachable, it falls back to a simulated estimate computed entirely in your browser.
+  </div>
+</div>
+
+<!-- ============ SETTINGS MODAL ============ -->
+<div class="modal-backdrop" id="settingsModal">
+  <div class="modal">
+    <h3>Income &amp; protected commitments</h3>
+    <p>This is what powers your Dynamic Runway — the money that's already spoken for gets protected first.</p>
+    <div class="field"><label>Available balance right now (₹)</label><input type="number" id="setBalance" /></div>
+    <div class="field"><label>Allowance type</label>
+      <select id="setAllowanceMode">
+        <option value="monthly">Monthly</option>
+        <option value="weekly">Weekly</option>
+      </select>
+    </div>
+    <div class="field-row">
+      <div class="field"><label id="incomeLabel">Monthly income (₹)</label><input type="number" id="setIncome" /></div>
+      <div class="field" id="nextInflowField"><label>Next inflow date</label><input type="date" id="setNextInflow" /></div>
+    </div>
+    <div class="field" id="weekStartField" style="display:none;">
+      <label>Week starts</label>
+      <select id="setWeekStart">
+        <option value="0">Sunday</option>
+        <option value="1">Monday</option>
+        <option value="2">Tuesday</option>
+        <option value="3">Wednesday</option>
+        <option value="4">Thursday</option>
+        <option value="5">Friday</option>
+        <option value="6">Saturday</option>
+      </select>
+    </div>
+    <hr style="border:none; border-top:1px solid var(--line); margin:16px 0;" />
+    <div id="milestoneList"></div>
+    <div class="field-row three" style="margin-top:10px;">
+      <div class="field"><label>Commitment</label><input type="text" id="msName" placeholder="e.g. Rent" /></div>
+      <div class="field"><label>Amount (₹)</label><input type="number" id="msAmount" /></div>
+      <div class="field"><label>Due date</label><input type="date" id="msDate" /></div>
+    </div>
+    <button class="secondary small" id="addMilestoneBtn">+ Add commitment</button>
+    <div class="modal-actions">
+      <button class="secondary" id="closeSettingsBtn">Cancel</button>
+      <button class="cobalt" id="saveSettingsBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ AI BACKEND MODAL ============ -->
+<div class="modal-backdrop" id="apiModal">
+  <div class="modal">
+    <h3>AI backend</h3>
+    <p>This app comes connected to a real Gemini-powered backend by default — no setup needed. The box below shows the backend URL currently in use. No AI key is ever entered here or stored in this browser — only a public URL, which isn't secret.
+      To use demo mode instead (a simulated response, computed entirely in your browser), clear this field and save. To point at a different backend, paste its URL and save.
+    </p>
+    <div class="field"><label>Backend URL</label><input type="text" id="backendUrlInput" placeholder="https://your-worker-name.your-subdomain.workers.dev" /></div>
+    <p class="stat-note">Uses Gemini 3.6 Flash (Google's free-tier model) on the backend — nothing to configure here.</p>
+    <div class="modal-actions">
+      <button class="secondary" id="closeApiBtn">Cancel</button>
+      <button class="coral" id="saveApiBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
