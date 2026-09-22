@@ -31,6 +31,37 @@ function getBackendUrl() {
 
 const SPLITWISE_TOKEN_STORAGE = 'clutchai_splitwise_token';
 
+// Demo mode: lets the Splitwise feature be shown end-to-end (protected
+// commitments, Safe-to-Spend impact, per-friend balances) without a real
+// Splitwise API key — Splitwise currently requires a paid plan to register
+// a third-party app, so this is a stand-in until real credentials exist.
+// It never touches the real OAuth flow below; once SPLITWISE_CLIENT_ID /
+// SECRET are added to the Worker, connectSplitwise() just works as-is.
+const SPLITWISE_DEMO_STORAGE = 'clutchai_splitwise_demo';
+function isSplitwiseDemo() { return localStorage.getItem(SPLITWISE_DEMO_STORAGE) === '1'; }
+
+// Small, clearly-fictional sample so it's obvious at a glance this isn't a
+// real account's data.
+function getMockSplitwiseData() {
+  return {
+    netBalance: -650,
+    owedToYou: 850,
+    youOwe: 1500,
+    friends: [
+      { name: 'Aisha Verma (demo)', amount: 850 },
+      { name: 'Rohit Malhotra (demo)', amount: -600 },
+      { name: 'Neha Kapoor (demo)', amount: -900 },
+    ],
+  };
+}
+
+function connectSplitwiseDemo() {
+  localStorage.setItem(SPLITWISE_DEMO_STORAGE, '1');
+  splitwiseData = getMockSplitwiseData();
+  splitwiseStatus = 'ready';
+  render();
+}
+
 // Holds the last-fetched balance summary in memory only (not persisted —
 // re-fetched fresh each time the app loads, so it's never stale for long).
 let splitwiseData = null;   // { netBalance, owedToYou, youOwe, friends: [...] }
@@ -47,6 +78,7 @@ function handleSplitwiseRedirect() {
   const err = params.get('splitwise_error');
   if (token) {
     localStorage.setItem(SPLITWISE_TOKEN_STORAGE, token);
+    localStorage.removeItem(SPLITWISE_DEMO_STORAGE); // a real connection supersedes demo mode
     history.replaceState({}, '', location.pathname);
   } else if (err) {
     splitwiseStatus = 'error';
@@ -66,6 +98,7 @@ function connectSplitwise() {
 
 function disconnectSplitwise() {
   localStorage.removeItem(SPLITWISE_TOKEN_STORAGE);
+  localStorage.removeItem(SPLITWISE_DEMO_STORAGE);
   splitwiseData = null;
   splitwiseStatus = 'disconnected';
   render();
@@ -366,7 +399,11 @@ function renderSplitwise() {
     el.innerHTML = `
       <div class="stat-label">Splitwise</div>
       <p class="stat-note">Connect your Splitwise account so shared expenses (trips, group dinners, rent splits) count toward your protected commitments automatically — no manual typing.</p>
-      <button class="cobalt small" onclick="connectSplitwise()">Connect Splitwise</button>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="cobalt small" onclick="connectSplitwise()">Connect Splitwise</button>
+        <button class="secondary small" onclick="connectSplitwiseDemo()">Try with demo data</button>
+      </div>
+      <p class="stat-note" style="margin-top:8px;">Real Splitwise sign-in needs API credentials on the backend. No credentials yet? Demo data shows exactly how this feature works once connected.</p>
     `;
     return;
   }
@@ -389,12 +426,16 @@ function renderSplitwise() {
   }
 
   // ready
+  const isDemo = isSplitwiseDemo();
+  const demoBadge = isDemo
+    ? `<span style="font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--coral); border:1px solid var(--coral); border-radius:999px; padding:2px 8px; margin-left:8px; vertical-align:middle;">Demo data</span>`
+    : '';
   const d = splitwiseData || { netBalance: 0, owedToYou: 0, youOwe: 0, friends: [] };
   const netLabel = d.netBalance >= 0 ? 'You are owed, overall' : 'You owe, overall';
   el.innerHTML = `
-    <div class="stat-label">Splitwise</div>
+    <div class="stat-label">Splitwise${demoBadge}</div>
     <div class="stat-value">${formatINR(Math.abs(d.netBalance))}</div>
-    <p class="stat-note">${netLabel} · ${formatINR(d.youOwe)} of that is already counted in your protected commitments above</p>
+    <p class="stat-note">${netLabel} · ${formatINR(d.youOwe)} of that is already counted in your protected commitments above${isDemo ? ' · Sample data — not a real Splitwise connection.' : ''}</p>
     ${d.friends.length ? `
       <div style="margin-top:10px;">
         ${d.friends.map(f => `
@@ -405,7 +446,7 @@ function renderSplitwise() {
         `).join('')}
       </div>
     ` : `<p class="list-empty">All settled up — no outstanding balances.</p>`}
-    <button class="secondary small" style="margin-top:10px;" onclick="disconnectSplitwise()">Disconnect</button>
+    <button class="secondary small" style="margin-top:10px;" onclick="disconnectSplitwise()">${isDemo ? 'Exit demo' : 'Disconnect'}</button>
   `;
 }
 
@@ -867,5 +908,9 @@ function demoExplainScenario(extracted, sim) {
 /* ---------------- boot ---------------- */
 
 handleSplitwiseRedirect();
+if (isSplitwiseDemo() && !getSplitwiseToken()) {
+  splitwiseData = getMockSplitwiseData();
+  splitwiseStatus = 'ready';
+}
 render();
 if (getSplitwiseToken()) fetchSplitwiseBalances();
